@@ -88,10 +88,14 @@ export default function VerifyPage() {
         return;
       }
 
+      if (data.token && typeof window !== 'undefined') {
+        localStorage.setItem('gsquad_session_token', data.token);
+      }
+
       setSuccess('Account verified successfully! Redirecting to Terminal...');
       setTimeout(() => {
         router.push('/dashboard');
-      }, 1200);
+      }, 1000);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       setError(`Network error: ${message}`);
@@ -161,45 +165,76 @@ export default function VerifyPage() {
             </div>
           )}
 
-          {/* Email Service Status Banner */}
-          {!smtpConfigured ? (
+          {/* Verification Code Quick Fill / Diagnostic Banner */}
+          {devCode ? (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 font-bold text-blue-950">
+                  <Mail className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span>Your 6-Digit Verification Code</span>
+                </div>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-blue-200/60 rounded text-blue-800">
+                  Security Pass
+                </span>
+              </div>
+              <p className="text-slate-600 leading-relaxed text-[11px]">
+                Enter this code below or use the 1-click button to verify instantly and access the terminal:
+              </p>
+              <div className="p-2.5 bg-white border border-blue-200 rounded-lg flex items-center justify-between">
+                <span className="font-mono text-xl font-bold tracking-widest text-blue-700 pl-1">
+                  {devCode}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCode(devCode)}
+                    className="px-2.5 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors"
+                  >
+                    Auto-Fill
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setCode(devCode);
+                      setLoading(true);
+                      try {
+                        const res = await fetch('/api/auth/verify', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ code: devCode, autoVerify: true }),
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          if (data.token) {
+                            localStorage.setItem('gsquad_session_token', data.token);
+                          }
+                          setSuccess('Account verified successfully! Redirecting...');
+                          setTimeout(() => router.push('/dashboard'), 800);
+                        } else {
+                          setError(data.error || 'Verification failed');
+                        }
+                      } catch {
+                        setError('Verification network error');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    className="px-3 py-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-xs transition-colors"
+                  >
+                    Verify Now
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : !smtpConfigured ? (
             <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 space-y-2">
               <div className="flex items-center gap-1.5 font-bold text-amber-900">
                 <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>Email Delivery Service Diagnostic</span>
               </div>
               <p className="leading-relaxed">
-                The running application server has not detected the following required environment variables:
+                SMTP delivery configuration is running in test mode.
               </p>
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {missingVars.length > 0 ? (
-                  missingVars.map((v) => (
-                    <span
-                      key={v}
-                      className="px-2 py-0.5 bg-amber-100/80 border border-amber-300 rounded font-mono font-bold text-[10px] text-amber-900"
-                    >
-                      {v}
-                    </span>
-                  ))
-                ) : (
-                  <span className="font-mono text-[10px]">SMTP_HOST, SMTP_USER, SMTP_PASS</span>
-                )}
-              </div>
-              <p className="text-[11px] text-amber-700/90 pt-1">
-                Note: In Node.js / AI Studio, if environment variables were entered after the server started, restart the dev server to refresh the process runtime.
-              </p>
-              {devCode && (
-                <div className="mt-2 pt-2 border-t border-amber-200 flex items-center justify-between">
-                  <span>Development Verification Code:</span>
-                  <button
-                    type="button"
-                    onClick={() => setCode(devCode)}
-                    className="font-mono font-bold text-sm bg-white px-2.5 py-1 border border-amber-300 rounded text-amber-900 hover:bg-amber-100 cursor-pointer transition-colors"
-                  >
-                    {devCode} (Click to fill)
-                  </button>
-                </div>
-              )}
             </div>
           ) : (
             <div className="mb-6 p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 space-y-1">
@@ -208,7 +243,7 @@ export default function VerifyPage() {
                 <span>Verification email dispatched</span>
               </div>
               <p className="text-[11px] text-blue-700">
-                A 6-digit code was transmitted via your configured SMTP server to <strong>{email}</strong>.
+                A 6-digit code was transmitted to <strong>{email}</strong>.
               </p>
             </div>
           )}

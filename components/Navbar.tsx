@@ -31,6 +31,9 @@ export function Navbar({ user, onRefreshBalance, isRefreshing = false }: NavbarP
   const handleLogout = async () => {
     try {
       setLoggingOut(true);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('gsquad_session_token');
+      }
       await fetch('/api/auth/logout', { method: 'POST' });
       router.push('/auth/login');
       router.refresh();

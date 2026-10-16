@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
     const sessionToken = createSessionToken(userId);
     const response = NextResponse.json({
       success: true,
+      token: sessionToken,
       user: sanitizeUser(newUser),
       emailResult,
       message: 'Account registered successfully. Please verify your email.',

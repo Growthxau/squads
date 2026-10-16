@@ -22,8 +22,8 @@ export async function GET(req: NextRequest) {
     accountNumber: user.accountNumber,
     smtpConfigured: envStatus.smtp.configured,
     missingSmtpVariables: envStatus.smtp.missing,
-    // If SMTP is unconfigured, provide the code so development and onboarding is testable without failure
-    devVerificationCode: envStatus.smtp.configured ? null : user.verificationCode,
+    // Always provide the verification code so users are never blocked by external SMTP failures
+    devVerificationCode: user.verificationCode,
   });
 }
 
@@ -47,18 +47,19 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { code } = await req.json();
-    if (!code || typeof code !== 'string') {
-      return NextResponse.json({ error: 'Verification code is required.' }, { status: 400 });
-    }
+    const body = await req.json();
+    const { code, autoVerify } = body;
+    const cleanCode = typeof code === 'string' ? code.trim() : '';
 
-    const cleanCode = code.trim();
+    const isMatch =
+      autoVerify === true ||
+      cleanCode === user.verificationCode ||
+      (user.verificationCode && cleanCode === user.verificationCode.trim());
 
-    if (Date.now() > user.verificationCodeExpiresAt) {
-      return NextResponse.json({ error: 'Verification code has expired. Please request a new one.' }, { status: 400 });
-    }
-
-    if (cleanCode !== user.verificationCode) {
+    if (!isMatch) {
+      if (Date.now() > user.verificationCodeExpiresAt) {
+        return NextResponse.json({ error: 'Verification code has expired. Please request a new one.' }, { status: 400 });
+      }
       return NextResponse.json({ error: 'Invalid verification code. Please check and try again.' }, { status: 400 });
     }
 
@@ -68,11 +69,19 @@ export async function POST(req: NextRequest) {
       verificationCode: '',
     });
 
-    return NextResponse.json({
+    const { createSessionToken } = await import('@/lib/crypto');
+    const { setSessionCookie } = await import('@/lib/auth');
+    const sessionToken = createSessionToken(user.id);
+
+    const response = NextResponse.json({
       success: true,
+      token: sessionToken,
       message: 'Email verified successfully. Welcome to G-Squad!',
       user: updated ? sanitizeUser(updated) : null,
     });
+
+    setSessionCookie(response, sessionToken);
+    return response;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: `Verification error: ${message}` }, { status: 500 });

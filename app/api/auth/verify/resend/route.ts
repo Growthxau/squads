@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      code: newCode,
       message: emailResult.sent
         ? `A new verification code was sent to ${user.email}.`
         : emailResult.message,

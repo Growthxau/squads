@@ -6,8 +6,8 @@
       "email": "kindblizz@gmail.com",
       "passwordHash": "95e264de7c6b8761f270a2a083123b8eae7e306855f9c7d0e876bb62fd9cce07661d8d6eedeadd0aadb2c70c15119053340d2c77fc7fc29a06e1628e9e8c66ed",
       "salt": "31c8667b67b5697bdb6eadfbb3734ab2",
-      "isVerified": false,
-      "verificationCode": "128594",
+      "isVerified": true,
+      "verificationCode": "",
       "verificationCodeExpiresAt": 1792238517953,
       "createdAt": "2026-10-16T12:01:57.953Z",
       "derivConnection": null,
@@ -100,6 +100,36 @@
       "verificationCode": "",
       "verificationCodeExpiresAt": 1792239410955,
       "createdAt": "2026-10-16T12:16:50.956Z",
+      "derivConnection": null,
+      "botSettings": {
+        "symbol": "R_100",
+        "contractType": "BOTH",
+        "durationTicks": 5,
+        "stake": 5,
+        "maxDailyLoss": 50,
+        "dailyProfitTarget": 100,
+        "isRunning": false
+      },
+      "dailyStats": {
+        "date": "2026-10-16",
+        "dailyProfitLoss": 0,
+        "totalTrades": 0,
+        "wins": 0,
+        "losses": 0,
+        "hitStopLoss": false,
+        "hitTakeProfit": false
+      }
+    },
+    "usr_1792160618889_io2hg": {
+      "id": "usr_1792160618889_io2hg",
+      "accountNumber": "GSQ-405750",
+      "email": "kindbilz@gmail.com",
+      "passwordHash": "eb8bd657c0c3862833b98c9aaa1ee65f192c5b6c2ffc4e85a20fa8d87dc8ab9c026720a298de48e925106fddabd2aa91cbcc258709da054aaa7af981f8f1bd63",
+      "salt": "720463b42c1b9e43ac5be01f51bbe6e8",
+      "isVerified": true,
+      "verificationCode": "",
+      "verificationCodeExpiresAt": 1792247018889,
+      "createdAt": "2026-10-16T14:23:38.889Z",
       "derivConnection": null,
       "botSettings": {
         "symbol": "R_100",

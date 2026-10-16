@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     const sessionToken = createSessionToken(user.id);
     const response = NextResponse.json({
       success: true,
+      token: sessionToken,
       user: sanitizeUser(user),
       message: 'Login successful',
     });

@@ -63,7 +63,10 @@ export async function getCurrentUserFromCookies(): Promise<User | null> {
 }
 
 export function getUserIdFromRequest(req: NextRequest): string | null {
-  const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const token =
+    req.cookies.get(SESSION_COOKIE_NAME)?.value ||
+    req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
+    req.headers.get('x-session-token');
   if (!token) return null;
   const payload = verifySessionToken(token);
   return payload?.userId || null;
@@ -72,8 +75,8 @@ export function getUserIdFromRequest(req: NextRequest): string | null {
 export function setSessionCookie(res: NextResponse, token: string) {
   res.cookies.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true,
+    sameSite: 'none',
     path: '/',
     maxAge: 7 * 24 * 60 * 60, // 7 days
   });
@@ -82,8 +85,8 @@ export function setSessionCookie(res: NextResponse, token: string) {
 export function clearSessionCookie(res: NextResponse) {
   res.cookies.set(SESSION_COOKIE_NAME, '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true,
+    sameSite: 'none',
     path: '/',
     maxAge: 0,
   });

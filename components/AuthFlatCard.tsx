@@ -33,7 +33,10 @@ export function AuthFlatCard({ initialMode = 'login' }: AuthFlatCardProps) {
   // Check if already authenticated; if so, redirect directly to dashboard
   useEffect(() => {
     let ignore = false;
-    fetch('/api/auth/me')
+    const token = typeof window !== 'undefined' ? localStorage.getItem('gsquad_session_token') : null;
+    fetch('/api/auth/me', {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
       .then((res) => {
         if (res.ok) return res.json();
         return null;
@@ -72,9 +75,13 @@ export function AuthFlatCard({ initialMode = 'login' }: AuthFlatCardProps) {
 
     try {
       const endpoint = mode === 'register' ? '/api/auth/register' : '/api/auth/login';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('gsquad_session_token') : null;
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ email, password }),
       });
 
@@ -83,6 +90,10 @@ export function AuthFlatCard({ initialMode = 'login' }: AuthFlatCardProps) {
         setError(data.error || `${mode === 'login' ? 'Sign In' : 'Registration'} failed.`);
         setLoading(false);
         return;
+      }
+
+      if (data.token && typeof window !== 'undefined') {
+        localStorage.setItem('gsquad_session_token', data.token);
       }
 
       if (mode === 'register') {
