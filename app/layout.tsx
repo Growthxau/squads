@@ -16,13 +16,10 @@ export const metadata: Metadata = {
   },
 };
 
-import { AuthInterceptor } from '@/components/AuthInterceptor';
-
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en">
       <body suppressHydrationWarning>
-        <AuthInterceptor />
         {children}
       </body>
     </html>

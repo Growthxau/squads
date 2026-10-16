@@ -8,7 +8,7 @@ import {
   User,
   BotSettings,
 } from '../db';
-import { getDerivAppId, getDerivWsUrl } from '../deriv/api';
+import { getDerivAppId, getDerivWsUrl, DERIV_WS_OPTIONS } from '../deriv/api';
 import { DerivTick, DerivOpenContract } from '../deriv/types';
 
 export interface BotTelemetryLog {
@@ -111,7 +111,7 @@ class UserTradingSession {
     this.addLog('info', `Connecting to Deriv WebSocket (${getDerivAppId()}) for account ${user.derivConnection.connectedAccountId}...`);
 
     try {
-      this.ws = new WebSocket(getDerivWsUrl());
+      this.ws = new WebSocket(getDerivWsUrl(), DERIV_WS_OPTIONS);
 
       this.ws.on('open', () => {
         this.addLog('info', 'WebSocket connected. Authorizing session...');

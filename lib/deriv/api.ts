@@ -9,17 +9,32 @@ export function getDerivAppId(): string {
   return '1089';
 }
 
-export function getDerivWsUrl(): string {
+export const DERIV_PRIMARY_HOST = 'red.derivws.com';
+
+export const DERIV_CLUSTERS = [
+  'red.derivws.com',
+  'frontend.derivws.com',
+  'blue.derivws.com',
+];
+
+export const DERIV_WS_OPTIONS: WebSocket.ClientOptions = {
+  family: 4,
+  headers: {
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    Origin: 'https://app.deriv.com',
+  },
+  handshakeTimeout: 8000,
+};
+
+export function getDerivWsUrl(host?: string): string {
   const appId = getDerivAppId();
-  return `wss://ws.derivws.com/websockets/v3?app_id=${appId}`;
+  const endpoint = host || process.env.DERIV_WS_HOST || DERIV_PRIMARY_HOST;
+  return `wss://${endpoint}/websockets/v3?app_id=${appId}`;
 }
 
 /**
- * Deriv REST OTP Endpoint as documented:
- * POST https://api.derivws.com/trading/v1/options/accounts/{accountId}/otp
- * Headers:
- *   Authorization: Bearer <PAT>
- *   Deriv-App-ID: <appId>
+ * Deriv REST OTP Endpoint
  */
 export async function requestAccountOtp(
   pat: string,
@@ -56,20 +71,9 @@ export async function requestAccountOtp(
 }
 
 /**
- * Validate a user's Deriv Personal Access Token (PAT).
- * Confirms the token is authentic, has 'trade' permission,
- * and retrieves all authorized trading accounts.
+ * Test authentication on a single cluster
  */
-export async function validateDerivToken(pat: string): Promise<DerivValidationResult> {
-  if (!pat || typeof pat !== 'string' || pat.trim().length < 8) {
-    return {
-      success: false,
-      error: 'Token must be a valid Deriv Personal Access Token (PAT).',
-    };
-  }
-
-  const cleanPat = pat.trim();
-
+function tryValidateOnCluster(cleanPat: string, cluster: string): Promise<DerivValidationResult> {
   return new Promise<DerivValidationResult>((resolve) => {
     let ws: WebSocket | null = null;
     let timer: NodeJS.Timeout | null = null;
@@ -93,17 +97,20 @@ export async function validateDerivToken(pat: string): Promise<DerivValidationRe
     };
 
     try {
-      ws = new WebSocket(getDerivWsUrl());
+      const url = getDerivWsUrl(cluster);
+      console.log(`[Deriv WS] Connecting to ${url}...`);
+      ws = new WebSocket(url, DERIV_WS_OPTIONS);
 
       timer = setTimeout(() => {
+        console.warn(`[Deriv WS] Timeout on ${cluster}`);
         done({
           success: false,
-          error: 'Connection to Deriv timed out after 10 seconds. Please check your network.',
+          error: `Connection to Deriv (${cluster}) timed out.`,
         });
-      }, 10000);
+      }, 7000);
 
       ws.on('open', () => {
-        // Send authorize request with the PAT
+        console.log(`[Deriv WS] Successfully opened connection to ${cluster}!`);
         ws?.send(
           JSON.stringify({
             authorize: cleanPat,
@@ -155,7 +162,6 @@ export async function validateDerivToken(pat: string): Promise<DerivValidationRe
                 };
               });
 
-            // If account_list is empty, use the authorized account
             if (accounts.length === 0) {
               const isVirtual = Boolean(auth.is_virtual);
               accounts.push({
@@ -189,9 +195,10 @@ export async function validateDerivToken(pat: string): Promise<DerivValidationRe
       });
 
       ws.on('error', (err: Error) => {
+        console.warn(`[Deriv WS] Error on ${cluster}:`, err.message);
         done({
           success: false,
-          error: `Deriv WebSocket connection error: ${err.message}`,
+          error: `Deriv WebSocket connection error (${cluster}): ${err.message}`,
         });
       });
     } catch (err: unknown) {
@@ -205,85 +212,140 @@ export async function validateDerivToken(pat: string): Promise<DerivValidationRe
 }
 
 /**
+ * Validate a user's Deriv Personal Access Token (PAT) across available clusters.
+ */
+export async function validateDerivToken(pat: string): Promise<DerivValidationResult> {
+  if (!pat || typeof pat !== 'string' || pat.trim().length < 8) {
+    return {
+      success: false,
+      error: 'Token must be a valid Deriv Personal Access Token (PAT).',
+    };
+  }
+
+  const cleanPat = pat.trim();
+  const clusters = [
+    process.env.DERIV_WS_HOST,
+    DERIV_PRIMARY_HOST,
+    'frontend.derivws.com',
+  ].filter(Boolean) as string[];
+
+  let lastError = 'Failed to connect to Deriv API clusters.';
+
+  for (const cluster of clusters) {
+    const result = await tryValidateOnCluster(cleanPat, cluster);
+    if (result.success) {
+      return result;
+    }
+    // If it's a specific token validation error from Deriv (e.g. Invalid token, missing scope), return directly
+    if (
+      result.error &&
+      !result.error.includes('connection error') &&
+      !result.error.includes('520') &&
+      !result.error.includes('timed out')
+    ) {
+      return result;
+    }
+    lastError = result.error || lastError;
+  }
+
+  return {
+    success: false,
+    error: lastError,
+  };
+}
+
+/**
  * Fetch the latest live balance for a connected account
  */
 export async function fetchLiveBalance(
   pat: string,
   targetAccountId?: string
 ): Promise<{ balance: number; currency: string } | null> {
-  return new Promise((resolve) => {
-    let ws: WebSocket | null = null;
-    let timer: NodeJS.Timeout | null = null;
-    let finished = false;
+  const clusters = [
+    process.env.DERIV_WS_HOST,
+    DERIV_PRIMARY_HOST,
+    'frontend.derivws.com',
+  ].filter(Boolean) as string[];
 
-    const cleanup = () => {
-      if (timer) clearTimeout(timer);
-      if (ws) {
-        try {
-          ws.close();
-        } catch {}
-      }
-    };
+  for (const cluster of clusters) {
+    const res = await new Promise<{ balance: number; currency: string } | null>((resolve) => {
+      let ws: WebSocket | null = null;
+      let timer: NodeJS.Timeout | null = null;
+      let finished = false;
 
-    const done = (val: { balance: number; currency: string } | null) => {
-      if (!finished) {
-        finished = true;
-        cleanup();
-        resolve(val);
-      }
-    };
+      const cleanup = () => {
+        if (timer) clearTimeout(timer);
+        if (ws) {
+          try {
+            ws.close();
+          } catch {}
+        }
+      };
 
-    try {
-      ws = new WebSocket(getDerivWsUrl());
+      const done = (val: { balance: number; currency: string } | null) => {
+        if (!finished) {
+          finished = true;
+          cleanup();
+          resolve(val);
+        }
+      };
 
-      timer = setTimeout(() => done(null), 8000);
+      try {
+        ws = new WebSocket(getDerivWsUrl(cluster), DERIV_WS_OPTIONS);
 
-      ws.on('open', () => {
-        ws?.send(
-          JSON.stringify({
-            authorize: pat,
-            req_id: 1,
-          })
-        );
-      });
+        timer = setTimeout(() => done(null), 5000);
 
-      ws.on('message', (data: WebSocket.RawData) => {
-        try {
-          const msg = JSON.parse(data.toString());
-          if (msg.error) {
-            return done(null);
-          }
-          if (msg.msg_type === 'authorize' && msg.authorize) {
-            const auth = msg.authorize;
-            // If targetAccountId matches, return balance directly
-            if (!targetAccountId || auth.loginid === targetAccountId) {
+        ws.on('open', () => {
+          ws?.send(
+            JSON.stringify({
+              authorize: pat,
+              req_id: 1,
+            })
+          );
+        });
+
+        ws.on('message', (data: WebSocket.RawData) => {
+          try {
+            const msg = JSON.parse(data.toString());
+            if (msg.error) {
+              return done(null);
+            }
+            if (msg.msg_type === 'authorize' && msg.authorize) {
+              const auth = msg.authorize;
+              if (!targetAccountId || auth.loginid === targetAccountId) {
+                return done({
+                  balance: auth.balance,
+                  currency: auth.currency,
+                });
+              }
+              ws?.send(
+                JSON.stringify({
+                  balance: 1,
+                  account: targetAccountId,
+                  req_id: 2,
+                })
+              );
+            } else if (msg.msg_type === 'balance' && msg.balance) {
               return done({
-                balance: auth.balance,
-                currency: auth.currency,
+                balance: msg.balance.balance,
+                currency: msg.balance.currency,
               });
             }
-            // Otherwise, balance subscribe
-            ws?.send(
-              JSON.stringify({
-                balance: 1,
-                account: targetAccountId,
-                req_id: 2,
-              })
-            );
-          } else if (msg.msg_type === 'balance' && msg.balance) {
-            return done({
-              balance: msg.balance.balance,
-              currency: msg.balance.currency,
-            });
+          } catch {
+            done(null);
           }
-        } catch {
-          done(null);
-        }
-      });
+        });
 
-      ws.on('error', () => done(null));
-    } catch {
-      done(null);
+        ws.on('error', () => done(null));
+      } catch {
+        done(null);
+      }
+    });
+
+    if (res !== null) {
+      return res;
     }
-  });
+  }
+
+  return null;
 }
