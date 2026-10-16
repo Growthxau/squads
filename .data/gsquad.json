@@ -1,0 +1,126 @@
+{
+  "users": {
+    "usr_1792152117953_vznhx": {
+      "id": "usr_1792152117953_vznhx",
+      "accountNumber": "GSQ-713106",
+      "email": "kindblizz@gmail.com",
+      "passwordHash": "95e264de7c6b8761f270a2a083123b8eae7e306855f9c7d0e876bb62fd9cce07661d8d6eedeadd0aadb2c70c15119053340d2c77fc7fc29a06e1628e9e8c66ed",
+      "salt": "31c8667b67b5697bdb6eadfbb3734ab2",
+      "isVerified": false,
+      "verificationCode": "128594",
+      "verificationCodeExpiresAt": 1792238517953,
+      "createdAt": "2026-10-16T12:01:57.953Z",
+      "derivConnection": null,
+      "botSettings": {
+        "symbol": "R_100",
+        "contractType": "BOTH",
+        "durationTicks": 5,
+        "stake": 5,
+        "maxDailyLoss": 50,
+        "dailyProfitTarget": 100,
+        "isRunning": false
+      },
+      "dailyStats": {
+        "date": "2026-10-16",
+        "dailyProfitLoss": 0,
+        "totalTrades": 0,
+        "wins": 0,
+        "losses": 0,
+        "hitStopLoss": false,
+        "hitTakeProfit": false
+      }
+    },
+    "usr_1792152678068_65vsy": {
+      "id": "usr_1792152678068_65vsy",
+      "accountNumber": "GSQ-295948",
+      "email": "testuser@example.com",
+      "passwordHash": "c9a7f6e09b0b33f00eb502eaa5cc7dd652f9fcab03026aeceae1764bd39099480b03fc12d632edb37426f3355caa5a7638b2ae73e1ed9fe3e06a78e576563ac5",
+      "salt": "01160184d8ed932147be38c1ec994022",
+      "isVerified": false,
+      "verificationCode": "271357",
+      "verificationCodeExpiresAt": 1792239078068,
+      "createdAt": "2026-10-16T12:11:18.068Z",
+      "derivConnection": null,
+      "botSettings": {
+        "symbol": "R_100",
+        "contractType": "BOTH",
+        "durationTicks": 5,
+        "stake": 5,
+        "maxDailyLoss": 50,
+        "dailyProfitTarget": 100,
+        "isRunning": false
+      },
+      "dailyStats": {
+        "date": "2026-10-16",
+        "dailyProfitLoss": 0,
+        "totalTrades": 0,
+        "wins": 0,
+        "losses": 0,
+        "hitStopLoss": false,
+        "hitTakeProfit": false
+      }
+    },
+    "usr_1792152689972_5j7g0": {
+      "id": "usr_1792152689972_5j7g0",
+      "accountNumber": "GSQ-850769",
+      "email": "checkenv@example.com",
+      "passwordHash": "f47c8fd112e7c4c84fbb5980d575f5c766626af8efaf4767379bd93f3c4c7b5e1d4ecc6412ca70903969341b6dd88030954fc9eaff62e0f82f4b5ed4f016f967",
+      "salt": "3bb479e7e9e62d922208fa1a60453829",
+      "isVerified": false,
+      "verificationCode": "629287",
+      "verificationCodeExpiresAt": 1792239089972,
+      "createdAt": "2026-10-16T12:11:29.972Z",
+      "derivConnection": null,
+      "botSettings": {
+        "symbol": "R_100",
+        "contractType": "BOTH",
+        "durationTicks": 5,
+        "stake": 5,
+        "maxDailyLoss": 50,
+        "dailyProfitTarget": 100,
+        "isRunning": false
+      },
+      "dailyStats": {
+        "date": "2026-10-16",
+        "dailyProfitLoss": 0,
+        "totalTrades": 0,
+        "wins": 0,
+        "losses": 0,
+        "hitStopLoss": false,
+        "hitTakeProfit": false
+      }
+    },
+    "usr_1792153010955_t2lga": {
+      "id": "usr_1792153010955_t2lga",
+      "accountNumber": "GSQ-172877",
+      "email": "enjoyingments@gmail.com",
+      "passwordHash": "20a2755eb0fabdb5e0ada6276b6d92506e1c362e3d3bf556cc3e4cce0bf065871f4a42556c7891d44a250fa249c7ebb4d974da0041da777004e818cbf28d3ceb",
+      "salt": "f6d683759d7e12646d747e3a09dfb56c",
+      "isVerified": true,
+      "verificationCode": "",
+      "verificationCodeExpiresAt": 1792239410955,
+      "createdAt": "2026-10-16T12:16:50.956Z",
+      "derivConnection": null,
+      "botSettings": {
+        "symbol": "R_100",
+        "contractType": "BOTH",
+        "durationTicks": 5,
+        "stake": 5,
+        "maxDailyLoss": 50,
+        "dailyProfitTarget": 100,
+        "isRunning": false
+      },
+      "dailyStats": {
+        "date": "2026-10-16",
+        "dailyProfitLoss": 0,
+        "totalTrades": 0,
+        "wins": 0,
+        "losses": 0,
+        "hitStopLoss": false,
+        "hitTakeProfit": false
+      }
+    }
+  },
+  "trades": [],
+  "tickets": []
+}
