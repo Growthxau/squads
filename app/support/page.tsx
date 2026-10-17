@@ -121,8 +121,12 @@ export default function SupportPage() {
 
   const faqs = [
     {
-      q: 'How do I create a Deriv Personal Access Token (PAT) with trade scope?',
-      a: 'Log in to your Deriv account at https://home.deriv.com/dashboard/profile. Under "API Token", enter a token name, check the "Trade" permission box (this is mandatory for the autonomous bot), and generate the token. Copy and paste it securely into G-Squad.',
+      q: 'How does the Deriv OAuth 2.0 (PKCE) login and registration work?',
+      a: 'G-Squad supports the official Deriv OAuth 2.0 Authorization Code flow with PKCE (Proof Key for Code Exchange). When you click "Continue with Deriv" or "Register with Deriv", you authorize G-Squad directly on Deriv\'s secure login screen (https://auth.deriv.com). Deriv redirects back to your registered callback URL with a single-use authorization code, which G-Squad exchanges server-side for access credentials with Trade permission. Your Deriv password is never shared.',
+    },
+    {
+      q: 'How does Deriv OAuth 2.0 protect my account credentials?',
+      a: 'With Deriv OAuth 2.0 PKCE, you log in directly on Deriv\'s official authentication portal. G-Squad never sees or stores your password or raw credentials. Access tokens are encrypted at rest with AES-256-GCM and scoped strictly for trade operations.',
     },
     {
       q: 'Does G-Squad ever start real trading automatically?',
@@ -138,7 +142,7 @@ export default function SupportPage() {
     },
     {
       q: 'Are my Deriv passwords or tokens stored in plaintext?',
-      a: 'No. G-Squad never requests or stores your Deriv login passwords. Personal Access Tokens are encrypted at rest on the server with AES-256-GCM. Frontend JavaScript never has access to the raw token string.',
+      a: 'No. G-Squad never requests or stores your Deriv login passwords. OAuth access tokens are encrypted at rest on the server with AES-256-GCM. Frontend JavaScript never has access to the raw token string.',
     },
   ];
 
@@ -153,14 +157,14 @@ export default function SupportPage() {
             Customer Support & Documentation
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Technical guidance for Deriv PAT connectivity, 5-tick execution rules, and risk safety.
+            Technical guidance for Deriv OAuth 2.0 PKCE connectivity, 5-tick execution rules, and risk safety.
           </p>
         </div>
 
         {/* FAQ Accordion */}
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
           <div className="flex items-center gap-2">
-            <HelpCircle className="w-5 h-5 text-blue-600" />
+            <HelpCircle className="w-5 h-5 text-red-600" />
             <h2 className="text-base font-bold text-slate-900">Frequently Answered Questions</h2>
           </div>
 
@@ -171,7 +175,7 @@ export default function SupportPage() {
                 <div key={idx} className="py-3.5">
                   <button
                     onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full flex items-center justify-between text-left text-xs sm:text-sm font-semibold text-slate-800 hover:text-blue-600 transition-colors"
+                    className="w-full flex items-center justify-between text-left text-xs sm:text-sm font-semibold text-slate-800 hover:text-red-600 transition-colors"
                   >
                     <span>{faq.q}</span>
                     {isOpen ? (
@@ -196,7 +200,7 @@ export default function SupportPage() {
           {/* Support Ticket Submission */}
           <div className="lg:col-span-7 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-blue-600" />
+              <MessageSquare className="w-5 h-5 text-red-600" />
               <h2 className="text-base font-bold text-slate-900">Open a Support Ticket</h2>
             </div>
 
@@ -222,13 +226,13 @@ export default function SupportPage() {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-600"
                 >
-                  <option value="Deriv Connection">Deriv PAT & WebSocket Authentication</option>
+                  <option value="Deriv Connection">Deriv OAuth 2.0 & WebSocket Connection</option>
                   <option value="Trading Engine">5-Tick Trading Strategy & Execution</option>
                   <option value="Risk Limits">Stop Loss & Profit Target Limits</option>
-                  <option value="Wallet / Cashier">Deposits, Withdrawals, & Balances</option>
-                  <option value="Account">Email Verification & User Profile</option>
+                  <option value="Deriv Cashier">Deriv Account & Live Balances</option>
+                  <option value="Account">Terminal Settings & Profile</option>
                 </select>
               </div>
 
@@ -242,7 +246,7 @@ export default function SupportPage() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="e.g., Question about Volatility 100 tick latency"
-                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-600"
                 />
               </div>
 
@@ -256,14 +260,14 @@ export default function SupportPage() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Describe your inquiry or issue in detail..."
-                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-red-600"
                 ></textarea>
               </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-sm transition-colors disabled:opacity-50 cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>{submitting ? 'Submitting...' : 'Submit Support Ticket'}</span>
@@ -288,7 +292,7 @@ export default function SupportPage() {
                   <div key={t.id} className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-800">{t.id}</span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-50 text-blue-700">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-red-50 text-red-700">
                         {t.status}
                       </span>
                     </div>

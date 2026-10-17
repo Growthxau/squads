@@ -24,6 +24,9 @@ export interface EnvStatus {
   deriv: {
     appIdConfigured: boolean;
     appId: string;
+    oauthClientIdConfigured: boolean;
+    oauthRedirectUriConfigured: boolean;
+    oauthConfigured: boolean;
   };
 }
 
@@ -43,6 +46,8 @@ export function getEnvironmentStatus(): EnvStatus {
 
   const allKnown = [
     'DERIV_APP_ID',
+    'DERIV_OAUTH_CLIENT_ID',
+    'DERIV_OAUTH_REDIRECT_URI',
     'SESSION_SECRET',
     'ENCRYPTION_KEY',
     'SMTP_HOST',
@@ -86,6 +91,9 @@ export function getEnvironmentStatus(): EnvStatus {
     deriv: {
       appIdConfigured: Boolean(process.env.DERIV_APP_ID),
       appId: process.env.DERIV_APP_ID || '1089',
+      oauthClientIdConfigured: Boolean(process.env.DERIV_OAUTH_CLIENT_ID),
+      oauthRedirectUriConfigured: Boolean(process.env.DERIV_OAUTH_REDIRECT_URI),
+      oauthConfigured: Boolean(process.env.DERIV_OAUTH_CLIENT_ID),
     },
   };
 }

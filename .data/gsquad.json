@@ -149,6 +149,248 @@
         "hitStopLoss": false,
         "hitTakeProfit": false
       }
+    },
+    "usr_test_1792189593806": {
+      "id": "usr_test_1792189593806",
+      "accountNumber": "GSQ-TEST",
+      "email": "cr_test_1792189593806@deriv.oauth",
+      "passwordHash": "",
+      "salt": "",
+      "isVerified": true,
+      "verificationCode": "",
+      "verificationCodeExpiresAt": 0,
+      "createdAt": "2026-10-16T22:26:33.806Z",
+      "derivConnection": {
+        "encryptedToken": "7d6575d37f4f27edefcbe087:08aeaac9ba4714b35c5ac302034f758c:62e9c132b3c54c16ef97e0de6aeb384a40e823ef1de42f613b2ff2ba33224ea43c546e",
+        "tokenMask": "••••••••token",
+        "connectedAccountId": "CR_TEST_1792189593806",
+        "connectedAccountType": "real",
+        "connectedCurrency": "USD",
+        "balance": 10000,
+        "accounts": [
+          {
+            "id": "CR_TEST_1792189593806",
+            "type": "real",
+            "currency": "USD",
+            "balance": 10000,
+            "isVirtual": false
+          }
+        ],
+        "connectedAt": "2026-10-16T22:26:33.806Z",
+        "lastValidatedAt": "2026-10-16T22:26:33.806Z",
+        "oauth": {
+          "expiresAt": 1792193193807,
+          "scope": "trade",
+          "tokenType": "Bearer"
+        }
+      },
+      "botSettings": {
+        "symbol": "R_100",
+        "contractType": "BOTH",
+        "durationTicks": 5,
+        "stake": 5,
+        "maxDailyLoss": 50,
+        "dailyProfitTarget": 100,
+        "isRunning": false
+      },
+      "dailyStats": {
+        "date": "2026-10-16",
+        "dailyProfitLoss": 0,
+        "totalTrades": 0,
+        "wins": 0,
+        "losses": 0,
+        "hitStopLoss": false,
+        "hitTakeProfit": false
+      }
+    },
+    "usr_test_1792189649023": {
+      "id": "usr_test_1792189649023",
+      "accountNumber": "GSQ-TEST",
+      "email": "cr_test_1792189649023@deriv.oauth",
+      "passwordHash": "",
+      "salt": "",
+      "isVerified": true,
+      "verificationCode": "",
+      "verificationCodeExpiresAt": 0,
+      "createdAt": "2026-10-16T22:27:29.023Z",
+      "derivConnection": {
+        "encryptedToken": "52c841edaf87b11cb1f5b108:f75d888048eedcc6182369e96c4ede6f:3a4b1d631020bbe3abc96e65b64459b3f5b18299c14968978067b6df75ba25f60fbebe",
+        "tokenMask": "••••••••token",
+        "connectedAccountId": "CR_TEST_1792189649023",
+        "connectedAccountType": "real",
+        "connectedCurrency": "USD",
+        "balance": 10000,
+        "accounts": [
+          {
+            "id": "CR_TEST_1792189649023",
+            "type": "real",
+            "currency": "USD",
+            "balance": 10000,
+            "isVirtual": false
+          }
+        ],
+        "connectedAt": "2026-10-16T22:27:29.023Z",
+        "lastValidatedAt": "2026-10-16T22:27:29.023Z",
+        "oauth": {
+          "expiresAt": 1792193249024,
+          "scope": "trade",
+          "tokenType": "Bearer"
+        }
+      },
+      "botSettings": {
+        "symbol": "R_100",
+        "contractType": "BOTH",
+        "durationTicks": 5,
+        "stake": 5,
+        "maxDailyLoss": 50,
+        "dailyProfitTarget": 100,
+        "isRunning": false
+      },
+      "dailyStats": {
+        "date": "2026-10-16",
+        "dailyProfitLoss": 0,
+        "totalTrades": 0,
+        "wins": 0,
+        "losses": 0,
+        "hitStopLoss": false,
+        "hitTakeProfit": false
+      }
+    },
+    "usr_debug_123": {
+      "id": "usr_debug_123",
+      "accountNumber": "GSQ-DEBUG",
+      "email": "debug@deriv.oauth",
+      "passwordHash": "",
+      "salt": "",
+      "isVerified": true,
+      "verificationCode": "",
+      "verificationCodeExpiresAt": 0,
+      "createdAt": "2026-10-16T22:27:48.169Z",
+      "derivConnection": null,
+      "botSettings": {
+        "symbol": "R_100",
+        "contractType": "BOTH",
+        "durationTicks": 5,
+        "stake": 5,
+        "maxDailyLoss": 50,
+        "dailyProfitTarget": 100,
+        "isRunning": false
+      },
+      "dailyStats": {
+        "date": "2026-10-16",
+        "dailyProfitLoss": 0,
+        "totalTrades": 0,
+        "wins": 0,
+        "losses": 0,
+        "hitStopLoss": false,
+        "hitTakeProfit": false
+      }
+    },
+    "usr_test_1792189695234": {
+      "id": "usr_test_1792189695234",
+      "accountNumber": "GSQ-TEST",
+      "email": "cr_test_1792189695234@deriv.oauth",
+      "passwordHash": "",
+      "salt": "",
+      "isVerified": true,
+      "verificationCode": "",
+      "verificationCodeExpiresAt": 0,
+      "createdAt": "2026-10-16T22:28:15.234Z",
+      "derivConnection": {
+        "encryptedToken": "2db02e609298c19a22202115:3d16b01dcfe3333624803b5c95544055:59500e39d229dfffcbdfeec43e406d62b6fa1ebe6db99831469acc3fd283b4b1d1ec32",
+        "tokenMask": "••••••••token",
+        "connectedAccountId": "CR_TEST_1792189695234",
+        "connectedAccountType": "real",
+        "connectedCurrency": "USD",
+        "balance": 10000,
+        "accounts": [
+          {
+            "id": "CR_TEST_1792189695234",
+            "type": "real",
+            "currency": "USD",
+            "balance": 10000,
+            "isVirtual": false
+          }
+        ],
+        "connectedAt": "2026-10-16T22:28:15.234Z",
+        "lastValidatedAt": "2026-10-16T22:28:15.234Z",
+        "oauth": {
+          "expiresAt": 1792193295235,
+          "scope": "trade",
+          "tokenType": "Bearer"
+        }
+      },
+      "botSettings": {
+        "symbol": "R_100",
+        "contractType": "BOTH",
+        "durationTicks": 5,
+        "stake": 5,
+        "maxDailyLoss": 50,
+        "dailyProfitTarget": 100,
+        "isRunning": false
+      },
+      "dailyStats": {
+        "date": "2026-10-16",
+        "dailyProfitLoss": 0,
+        "totalTrades": 0,
+        "wins": 0,
+        "losses": 0,
+        "hitStopLoss": false,
+        "hitTakeProfit": false
+      }
+    },
+    "usr_test_1792189791317": {
+      "id": "usr_test_1792189791317",
+      "accountNumber": "GSQ-TEST",
+      "email": "cr_test_1792189791317@deriv.oauth",
+      "passwordHash": "",
+      "salt": "",
+      "isVerified": true,
+      "verificationCode": "",
+      "verificationCodeExpiresAt": 0,
+      "createdAt": "2026-10-16T22:29:51.317Z",
+      "derivConnection": {
+        "encryptedToken": "99710eca0d2fbd15b51d9362:1c304f06c95178993950c6991fa3bfd5:c62895825b5f0568f7e161dabcf74a0d8177bf359478ee43720a95a5a742eb123644f2",
+        "tokenMask": "••••••••token",
+        "connectedAccountId": "CR_TEST_1792189791317",
+        "connectedAccountType": "real",
+        "connectedCurrency": "USD",
+        "balance": 10000,
+        "accounts": [
+          {
+            "id": "CR_TEST_1792189791317",
+            "type": "real",
+            "currency": "USD",
+            "balance": 10000,
+            "isVirtual": false
+          }
+        ],
+        "connectedAt": "2026-10-16T22:29:51.317Z",
+        "lastValidatedAt": "2026-10-16T22:29:51.317Z",
+        "oauth": {
+          "expiresAt": 1792193391319,
+          "scope": "trade",
+          "tokenType": "Bearer"
+        }
+      },
+      "botSettings": {
+        "symbol": "R_100",
+        "contractType": "BOTH",
+        "durationTicks": 5,
+        "stake": 5,
+        "maxDailyLoss": 50,
+        "dailyProfitTarget": 100,
+        "isRunning": false
+      },
+      "dailyStats": {
+        "date": "2026-10-16",
+        "dailyProfitLoss": 0,
+        "totalTrades": 0,
+        "wins": 0,
+        "losses": 0,
+        "hitStopLoss": false,
+        "hitTakeProfit": false
+      }
     }
   },
   "trades": [],

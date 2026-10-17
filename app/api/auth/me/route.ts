@@ -16,19 +16,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ authenticated: false }, { status: 401 });
     }
 
-    // Refresh Deriv balance in the background if connected
+    // Refresh Deriv balance asynchronously in the background if connected (do not block auth verification)
     if (user.derivConnection && user.derivConnection.encryptedToken) {
-      try {
-        const pat = decryptData(user.derivConnection.encryptedToken);
-        const live = await fetchLiveBalance(pat, user.derivConnection.connectedAccountId);
-        if (live && live.balance !== undefined) {
-          user.derivConnection.balance = live.balance;
-          user.derivConnection.connectedCurrency = live.currency || user.derivConnection.connectedCurrency;
-          updateUser(user.id, { derivConnection: user.derivConnection });
+      (async () => {
+        try {
+          const pat = decryptData(user.derivConnection!.encryptedToken);
+          const live = await fetchLiveBalance(pat, user.derivConnection!.connectedAccountId);
+          if (live && live.balance !== undefined) {
+            user.derivConnection!.balance = live.balance;
+            user.derivConnection!.connectedCurrency = live.currency || user.derivConnection!.connectedCurrency;
+            updateUser(user.id, { derivConnection: user.derivConnection });
+          }
+        } catch (e) {
+          console.warn('Could not refresh balance in /api/auth/me:', e);
         }
-      } catch (e) {
-        console.warn('Could not refresh balance in /api/auth/me:', e);
-      }
+      })().catch(() => {});
     }
 
     return NextResponse.json({

@@ -17,16 +17,16 @@ export function GSquadRobotIcon({ className = 'w-8 h-8' }: { className?: string 
         className="w-full h-full drop-shadow-sm"
       >
         <defs>
-          {/* Lavender/Purple Gradient for ears & antenna */}
-          <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#818cf8" />
-            <stop offset="100%" stopColor="#6366f1" />
+          {/* Vibrant Red Gradient for ears & antenna */}
+          <linearGradient id="redGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ff4d4f" />
+            <stop offset="100%" stopColor="#dc2626" />
           </linearGradient>
 
           {/* Chassis White/Silver Gradient */}
           <linearGradient id="chassisGradient" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="100%" stopColor="#e2e8f0" />
+            <stop offset="100%" stopColor="#f1f5f9" />
           </linearGradient>
 
           {/* Screen Dark Charcoal Gradient */}
@@ -35,20 +35,20 @@ export function GSquadRobotIcon({ className = 'w-8 h-8' }: { className?: string 
             <stop offset="100%" stopColor="#0f172a" />
           </linearGradient>
 
-          {/* Cyan Glow Filter for Eyes & Smile */}
-          <filter id="cyanGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor="#06b6d4" floodOpacity="0.8" />
+          {/* Ruby Glow Filter for Eyes & Smile */}
+          <filter id="redGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor="#ef4444" floodOpacity="0.9" />
           </filter>
         </defs>
 
         {/* Top Antenna / Head Node */}
-        <rect x="42" y="8" width="16" height="10" rx="5" fill="url(#purpleGradient)" />
+        <rect x="42" y="8" width="16" height="10" rx="5" fill="url(#redGradient)" />
 
         {/* Left Ear Node */}
-        <rect x="6" y="38" width="12" height="22" rx="6" fill="url(#purpleGradient)" />
+        <rect x="6" y="38" width="12" height="22" rx="6" fill="url(#redGradient)" />
 
         {/* Right Ear Node */}
-        <rect x="82" y="38" width="12" height="22" rx="6" fill="url(#purpleGradient)" />
+        <rect x="82" y="38" width="12" height="22" rx="6" fill="url(#redGradient)" />
 
         {/* Outer Head Chassis (White squircle with soft border) */}
         <rect
@@ -72,18 +72,18 @@ export function GSquadRobotIcon({ className = 'w-8 h-8' }: { className?: string 
           fill="url(#screenGradient)"
         />
 
-        {/* Glowing Cyan Eyes */}
-        <circle cx="39" cy="45" r="5" fill="#00f5ff" filter="url(#cyanGlow)" />
-        <circle cx="61" cy="45" r="5" fill="#00f5ff" filter="url(#cyanGlow)" />
+        {/* Glowing Red Eyes */}
+        <circle cx="39" cy="45" r="5" fill="#ff444f" filter="url(#redGlow)" />
+        <circle cx="61" cy="45" r="5" fill="#ff444f" filter="url(#redGlow)" />
 
-        {/* Glowing Cyan Smile */}
+        {/* Glowing Red Smile */}
         <path
           d="M 43 56 Q 50 62 57 56"
-          stroke="#00f5ff"
+          stroke="#ff444f"
           strokeWidth="3"
           strokeLinecap="round"
           fill="none"
-          filter="url(#cyanGlow)"
+          filter="url(#redGlow)"
         />
       </svg>
     </div>
@@ -105,7 +105,7 @@ export function GSquadLogo({
             G-SQUAD
           </span>
           {subtitle && (
-            <span className="text-[10px] uppercase font-semibold tracking-wider text-blue-600 leading-none mt-1">
+            <span className="text-[10px] uppercase font-semibold tracking-wider text-red-600 leading-none mt-1">
               {subtitle}
             </span>
           )}

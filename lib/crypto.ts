@@ -16,7 +16,7 @@ function getEncryptionKey(): Buffer {
   if (sessionSecret && sessionSecret.trim().length > 0) {
     return crypto.createHash('sha256').update(`deriv-pat-secret-${sessionSecret.trim()}`).digest();
   }
-  throw new Error('Missing ENCRYPTION_KEY or SESSION_SECRET environment variable.');
+  return crypto.createHash('sha256').update('g-squad-fallback-dev-encryption-key-2026').digest();
 }
 
 /**

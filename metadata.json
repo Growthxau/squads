@@ -1,6 +1,6 @@
 {
   "name": "G-Squad",
-  "description": "G-Squad is an institutional-grade autonomous Deriv trading platform with Personal Access Token (PAT) security, synthetic indices 5-tick execution, and server-side risk limits.",
+  "description": "G-Squad is an institutional-grade autonomous Deriv trading platform with Deriv OAuth 2.0 PKCE security, synthetic indices 5-tick execution, and server-side risk limits.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

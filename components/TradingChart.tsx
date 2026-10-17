@@ -80,8 +80,8 @@ export function TradingChart({ symbol, ticks, activeContract, botStatus }: Tradi
         <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="w-full h-full">
           <defs>
             <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2563eb" stopOpacity="0.15" />
-              <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="#dc2626" stopOpacity="0.18" />
+              <stop offset="100%" stopColor="#dc2626" stopOpacity="0.0" />
             </linearGradient>
           </defs>
 
@@ -112,7 +112,7 @@ export function TradingChart({ symbol, ticks, activeContract, botStatus }: Tradi
           )}
 
           {/* Line stroke */}
-          <path d={pathD} fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={pathD} fill="none" stroke="#dc2626" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
 
           {/* Latest Tick Pulse Circle */}
           {points.length > 0 && (
@@ -120,7 +120,7 @@ export function TradingChart({ symbol, ticks, activeContract, botStatus }: Tradi
               cx={width}
               cy={height - paddingY - ((latestQuote - min) / range) * (height - 2 * paddingY)}
               r="4.5"
-              fill={isUp ? '#10b981' : '#f43f5e'}
+              fill={isUp ? '#10b981' : '#dc2626'}
               stroke="#ffffff"
               strokeWidth="2"
             />
@@ -133,8 +133,8 @@ export function TradingChart({ symbol, ticks, activeContract, botStatus }: Tradi
         <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
             <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
             </span>
             <span className="font-semibold text-slate-800">
               Contract #{activeContract.contract_id} Active

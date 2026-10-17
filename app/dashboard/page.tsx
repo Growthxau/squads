@@ -309,7 +309,7 @@ export default function DashboardPage() {
                   ) : (
                     <span className="text-amber-600 font-medium flex items-center gap-1">
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      No Deriv PAT Connected. Connect your token to enable live trading.
+                      No Deriv Account Connected. Connect your account to enable live trading.
                     </span>
                   )}
                 </div>
@@ -512,10 +512,26 @@ export default function DashboardPage() {
 
               {!derivConn?.connected && (
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs text-amber-800">
-                  <span>Connect a Deriv PAT to activate bot buttons.</span>
-                  <Link href="/connect-deriv" className="font-bold underline text-amber-900">
+                  <span>Connect your Deriv account to activate bot buttons.</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const width = 600;
+                      const height = 740;
+                      const left = window.screenX + (window.outerWidth - width) / 2;
+                      const top = window.screenY + (window.outerHeight - height) / 2.5;
+                      fetch('/api/auth/deriv/init?mode=login')
+                        .then((res) => res.json())
+                        .then((data) => {
+                          if (data.url) {
+                            window.open(data.url, 'deriv_oauth_dash_notice2', `width=${width},height=${height},left=${left},top=${top}`);
+                          }
+                        });
+                    }}
+                    className="font-bold underline text-amber-900 cursor-pointer"
+                  >
                     Connect Now
-                  </Link>
+                  </button>
                 </div>
               )}
             </div>

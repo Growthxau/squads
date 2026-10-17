@@ -4,16 +4,14 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { GSquadLogo } from './GSquadLogo';
+import { DerivLogoIcon } from './DerivLogo';
 import {
   Activity,
-  Key,
-  Wallet,
   HelpCircle,
   LogOut,
-  User,
-  ShieldCheck,
   RefreshCw,
-  ExternalLink,
+  ShieldCheck,
+  Zap,
 } from 'lucide-react';
 import { SanitizedUser } from '@/lib/auth';
 
@@ -27,6 +25,7 @@ export function Navbar({ user, onRefreshBalance, isRefreshing = false }: NavbarP
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [oauthConnecting, setOauthConnecting] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -42,11 +41,35 @@ export function Navbar({ user, onRefreshBalance, isRefreshing = false }: NavbarP
     }
   };
 
+  const handleConnectOAuth = async () => {
+    try {
+      setOauthConnecting(true);
+      const res = await fetch('/api/auth/deriv/init?mode=login');
+      const data = await res.json();
+      if (data.url) {
+        const width = 600;
+        const height = 740;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2.5;
+        const popup = window.open(
+          data.url,
+          'deriv_oauth_nav',
+          `width=${width},height=${height},left=${left},top=${top}`
+        );
+        if (!popup || popup.closed) {
+          window.location.href = data.url;
+        }
+      }
+    } catch (e) {
+      console.warn('OAuth trigger error:', e);
+    } finally {
+      setOauthConnecting(false);
+    }
+  };
+
   const navLinks = [
-    { href: '/dashboard', label: 'Dashboard', icon: Activity },
-    { href: '/connect-deriv', label: 'Connect Deriv', icon: Key },
-    { href: '/wallet', label: 'Wallet & Cashier', icon: Wallet },
-    { href: '/support', label: 'Support', icon: HelpCircle },
+    { href: '/dashboard', label: 'Trading Terminal', icon: Activity },
+    { href: '/support', label: 'Help & Safety', icon: HelpCircle },
   ];
 
   const derivConn = user?.derivConnection;
@@ -69,13 +92,13 @@ export function Navbar({ user, onRefreshBalance, isRefreshing = false }: NavbarP
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-xl transition-colors ${
                     isActive
-                      ? 'bg-blue-50 text-blue-700'
+                      ? 'bg-red-50 text-red-600 font-bold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-slate-500'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-red-600' : 'text-slate-500'}`} />
                   <span>{link.label}</span>
                 </Link>
               );
@@ -89,19 +112,19 @@ export function Navbar({ user, onRefreshBalance, isRefreshing = false }: NavbarP
             <>
               {/* Deriv Connection Status Chip */}
               {derivConn?.connected ? (
-                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                <div className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
                   <span className="flex h-2 w-2 relative">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
                   <div className="flex flex-col">
-                    <div className="flex items-center gap-1.5 font-medium text-slate-800">
+                    <div className="flex items-center gap-1.5 font-bold text-slate-800">
                       <span>{derivConn.connectedAccountId}</span>
-                      <span className="text-[10px] uppercase font-bold text-slate-500">
-                        ({derivConn.connectedAccountType})
+                      <span className="text-[10px] uppercase font-bold text-slate-400 px-1 py-0.2 bg-slate-200 rounded">
+                        {derivConn.connectedAccountType}
                       </span>
                     </div>
-                    <span className="font-semibold text-blue-600">
+                    <span className="font-extrabold text-red-600 font-mono">
                       ${derivConn.balance.toFixed(2)} {derivConn.connectedCurrency}
                     </span>
                   </div>
@@ -110,20 +133,22 @@ export function Navbar({ user, onRefreshBalance, isRefreshing = false }: NavbarP
                       onClick={onRefreshBalance}
                       disabled={isRefreshing}
                       title="Refresh live balance from Deriv"
-                      className="p-1 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded transition-colors disabled:opacity-50"
+                      className="p-1 text-slate-400 hover:text-red-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
                     >
-                      <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-red-600' : ''}`} />
                     </button>
                   )}
                 </div>
               ) : (
-                <Link
-                  href="/connect-deriv"
-                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors"
+                <button
+                  type="button"
+                  onClick={handleConnectOAuth}
+                  disabled={oauthConnecting}
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
-                  <Key className="w-3.5 h-3.5" />
-                  Connect Deriv PAT
-                </Link>
+                  <DerivLogoIcon className="w-3.5 h-3.5" />
+                  <span>Connect Deriv</span>
+                </button>
               )}
 
               {/* G-Squad User Identifier */}
@@ -136,7 +161,7 @@ export function Navbar({ user, onRefreshBalance, isRefreshing = false }: NavbarP
                   onClick={handleLogout}
                   disabled={loggingOut}
                   title="Sign Out"
-                  className="p-2 text-slate-500 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -146,13 +171,13 @@ export function Navbar({ user, onRefreshBalance, isRefreshing = false }: NavbarP
             <div className="flex items-center gap-2">
               <Link
                 href="/auth/login"
-                className="px-3.5 py-1.5 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
               >
                 Sign In
               </Link>
               <Link
                 href="/auth/register"
-                className="px-4 py-1.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm shadow-blue-500/20 transition-colors"
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xs transition-colors"
               >
                 Get Started
               </Link>

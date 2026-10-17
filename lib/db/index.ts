@@ -19,6 +19,11 @@ export interface DerivConnection {
   accounts: DerivAccountInfo[];
   connectedAt: string;
   lastValidatedAt: string;
+  oauth?: {
+    expiresAt?: number;
+    scope?: string;
+    tokenType?: string;
+  };
 }
 
 export interface BotSettings {
@@ -121,12 +126,26 @@ function initDb(): DatabaseSchema {
 }
 
 let dbCache: DatabaseSchema | null = null;
+let lastDbMtime = 0;
 
 function getDb(): DatabaseSchema {
-  if (!dbCache) {
-    dbCache = initDb();
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const stats = fs.statSync(DB_FILE);
+      if (!dbCache || stats.mtimeMs > lastDbMtime) {
+        const raw = fs.readFileSync(DB_FILE, 'utf8');
+        dbCache = JSON.parse(raw);
+        lastDbMtime = stats.mtimeMs;
+      }
+    } else if (!dbCache) {
+      dbCache = initDb();
+    }
+  } catch (err) {
+    if (!dbCache) {
+      dbCache = initDb();
+    }
   }
-  return dbCache;
+  return dbCache!;
 }
 
 function saveDb(data: DatabaseSchema) {
@@ -138,6 +157,9 @@ function saveDb(data: DatabaseSchema) {
     fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf8');
     fs.renameSync(tempFile, DB_FILE);
     dbCache = data;
+    try {
+      lastDbMtime = fs.statSync(DB_FILE).mtimeMs;
+    } catch {}
   } catch (err) {
     console.error('Error saving DB:', err);
   }
@@ -160,6 +182,21 @@ export function findUserById(id: string): User | null {
   const user = db.users[id];
   if (!user) return null;
   return checkAndResetDailyStats(user);
+}
+
+export function findUserByDerivAccountId(accountId: string): User | null {
+  const db = getDb();
+  const target = accountId.trim();
+  for (const user of Object.values(db.users)) {
+    if (user.derivConnection?.connectedAccountId === target) {
+      return checkAndResetDailyStats(user);
+    }
+    // Also check all associated accounts
+    if (user.derivConnection?.accounts?.some((a) => a.id === target)) {
+      return checkAndResetDailyStats(user);
+    }
+  }
+  return null;
 }
 
 export function createUser(user: User): User {
