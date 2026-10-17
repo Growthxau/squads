@@ -169,18 +169,15 @@ export function Navbar({ user, onRefreshBalance, isRefreshing = false }: NavbarP
             </>
           ) : (
             <div className="flex items-center gap-2">
-              <Link
-                href="/auth/login"
-                className="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+              <button
+                type="button"
+                onClick={handleConnectOAuth}
+                disabled={oauthConnecting}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
               >
-                Sign In
-              </Link>
-              <Link
-                href="/auth/register"
-                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xs transition-colors"
-              >
-                Get Started
-              </Link>
+                <DerivLogoIcon className="w-4 h-4" />
+                <span>{oauthConnecting ? 'Connecting...' : 'Login with Deriv'}</span>
+              </button>
             </div>
           )}
         </div>

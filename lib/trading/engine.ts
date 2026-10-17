@@ -1,4 +1,5 @@
 import WebSocket from 'ws';
+import { GoogleGenAI } from "@google/genai";
 import { decryptData } from '../crypto';
 import {
   findUserById,
@@ -10,6 +11,15 @@ import {
 } from '../db';
 import { getDerivAppId, getDerivWsUrl, DERIV_WS_OPTIONS } from '../deriv/api';
 import { DerivTick, DerivOpenContract } from '../deriv/types';
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+  httpOptions: {
+    headers: {
+      'User-Agent': 'aistudio-build',
+    }
+  }
+});
 
 export interface BotTelemetryLog {
   id: string;
@@ -30,6 +40,28 @@ export interface EngineState {
   lastTradeTime: number | null;
 }
 
+async function getGeminiAIRecommendation(quotes: number[]): Promise<'CALL' | 'PUT' | null> {
+  if (!process.env.GEMINI_API_KEY) return null;
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.8-flash',
+      contents: `Analyze these recent 8 price ticks: [${quotes.join(', ')}]. Should we trade a 5-tick RISE (CALL) or FALL (PUT)? Respond in JSON format with {"decision": "CALL" or "PUT" or "HOLD", "confidence": number}.`,
+      config: {
+        responseMimeType: 'application/json',
+      },
+    });
+    const text = response.text;
+    if (!text) return null;
+    const json = JSON.parse(text.trim());
+    if (json.decision === 'CALL' || json.decision === 'PUT') {
+      return json.decision;
+    }
+  } catch (err) {
+    console.warn('Gemini AI trade analysis error:', err);
+  }
+  return null;
+}
+
 // In-memory active bot sessions
 class UserTradingSession {
   private userId: string;
@@ -43,6 +75,8 @@ class UserTradingSession {
   private lastTradeTime: number | null = null;
   private inTradeLock = false;
   private pingInterval: NodeJS.Timeout | null = null;
+  private currentStake: number = 5.0;
+  private consecutiveLosses: number = 0;
 
   constructor(userId: string) {
     this.userId = userId;
@@ -51,13 +85,12 @@ class UserTradingSession {
   public getSnapshot(): EngineState {
     const user = findUserById(this.userId);
     const symbol = user?.botSettings.symbol || 'R_100';
-    const stake = user?.botSettings.stake || 5;
 
     return {
       userId: this.userId,
       status: this.status,
       activeSymbol: symbol,
-      currentStake: stake,
+      currentStake: this.currentStake,
       recentTicks: this.tickHistory.slice(-20),
       activeContract: this.activeContract,
       logs: this.logs.slice(-25),
@@ -86,10 +119,9 @@ class UserTradingSession {
     }
 
     if (!user.derivConnection || !user.derivConnection.encryptedToken) {
-      return { success: false, error: 'No Deriv account connected. Please connect your Deriv PAT first.' };
+      return { success: false, error: 'No Deriv account connected. Please connect your Deriv account first.' };
     }
 
-    // Check risk limits before starting
     if (user.dailyStats.hitStopLoss) {
       return { success: false, error: 'Trading halted: Maximum daily loss limit was reached today.' };
     }
@@ -104,11 +136,13 @@ class UserTradingSession {
       return { success: false, error: 'Failed to decrypt Deriv credentials. Please reconnect.' };
     }
 
+    this.currentStake = user.botSettings.stake || 5.0;
+    this.consecutiveLosses = 0;
     this.isTerminated = false;
     this.startedAt = new Date().toISOString();
     this.status = 'ANALYZING_TICKS';
-    this.addLog('info', `G-Squad Autonomous Engine initialized for ${user.accountNumber}.`);
-    this.addLog('info', `Connecting to Deriv WebSocket (${getDerivAppId()}) for account ${user.derivConnection.connectedAccountId}...`);
+    this.addLog('info', `G-Squad Autonomous Gemini AI Engine initialized for ${user.accountNumber}. Base stake: $${this.currentStake.toFixed(2)}.`);
+    this.addLog('info', `Connecting to Deriv WebSocket (${getDerivAppId()})...`);
 
     try {
       this.ws = new WebSocket(getDerivWsUrl(), DERIV_WS_OPTIONS);
@@ -122,7 +156,6 @@ class UserTradingSession {
           })
         );
 
-        // Keep-alive ping
         this.pingInterval = setInterval(() => {
           if (this.ws?.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify({ ping: 1 }));
@@ -179,15 +212,13 @@ class UserTradingSession {
       return;
     }
 
-    // 1. Authorize response
     if (msg.msg_type === 'authorize' && msg.authorize) {
       const auth = msg.authorize as { loginid: string; balance: number; currency: string };
-      this.addLog('info', `Authorized as ${auth.loginid}. Subscribing to synthetic ticks...`);
+      this.addLog('info', `Authorized as ${auth.loginid}. Subscribing to synthetic ticks (Volatility 100)...`);
       
       const user = findUserById(this.userId);
       const symbol = user?.botSettings.symbol || 'R_100';
 
-      // Subscribe to ticks
       this.ws?.send(
         JSON.stringify({
           ticks: symbol,
@@ -197,7 +228,6 @@ class UserTradingSession {
       );
     }
 
-    // 2. Tick stream updates
     if (msg.msg_type === 'tick' && msg.tick) {
       const tickData = msg.tick as { symbol: string; quote: number; epoch: number; id?: string };
       const tick: DerivTick = {
@@ -212,25 +242,21 @@ class UserTradingSession {
         this.tickHistory.shift();
       }
 
-      // If currently in a contract, update spot
       if (this.activeContract && this.status === 'CONTRACT_ACTIVE') {
         this.activeContract.current_spot = tick.quote;
       }
 
-      // Check whether to evaluate strategy
       if (this.status === 'ANALYZING_TICKS' && !this.inTradeLock) {
         this.evaluateStrategy();
       }
     }
 
-    // 3. Proposal response
     if (msg.msg_type === 'proposal' && msg.proposal) {
       const proposal = msg.proposal as { id: string; ask_price: number; payout: number; spot: number };
       this.addLog('info', `Proposal received #${proposal.id}. Stake: $${proposal.ask_price} | Payout: $${proposal.payout}`);
       this.executeBuy(proposal.id, proposal.ask_price);
     }
 
-    // 4. Buy response
     if (msg.msg_type === 'buy' && msg.buy) {
       const buy = msg.buy as { contract_id: number; buy_price: number; payout: number; balance_after?: number };
       this.status = 'CONTRACT_ACTIVE';
@@ -247,7 +273,6 @@ class UserTradingSession {
 
       this.addLog('trade', `Contract #${buy.contract_id} opened: 5-tick Rise/Fall. Monitoring tick execution...`);
 
-      // Subscribe to contract result
       this.ws?.send(
         JSON.stringify({
           proposal_open_contract: 1,
@@ -258,7 +283,6 @@ class UserTradingSession {
       );
     }
 
-    // 5. Open contract update
     if (msg.msg_type === 'proposal_open_contract' && msg.proposal_open_contract) {
       const contract = msg.proposal_open_contract as {
         contract_id: number;
@@ -281,7 +305,6 @@ class UserTradingSession {
         this.activeContract.current_spot = contract.current_spot;
         this.activeContract.tick_count = contract.tick_count;
 
-        // Contract settlement
         if (contract.is_sold === 1 || contract.is_expired === 1) {
           this.handleContractSettlement(contract);
         }
@@ -289,22 +312,16 @@ class UserTradingSession {
     }
   }
 
-  /**
-   * Quantitative strategy evaluation:
-   * Examines tick momentum, directionality, and volatility threshold.
-   * Skips unsuitable or choppy conditions.
-   */
-  private evaluateStrategy() {
-    if (this.tickHistory.length < 10) {
-      return; // Await initial rolling tick buffer
+  private async evaluateStrategy() {
+    if (this.tickHistory.length < 8) {
+      return;
     }
 
     const user = findUserById(this.userId);
     if (!user) return;
 
-    // Check risk limits before evaluating any trade
     const { dailyProfitLoss, hitStopLoss, hitTakeProfit } = user.dailyStats;
-    const { maxDailyLoss, dailyProfitTarget, stake, symbol, contractType } = user.botSettings;
+    const { maxDailyLoss, dailyProfitTarget, symbol } = user.botSettings;
 
     if (dailyProfitLoss <= -maxDailyLoss || hitStopLoss) {
       this.status = 'HALTED_RISK';
@@ -326,67 +343,43 @@ class UserTradingSession {
       return;
     }
 
-    // Cooldown check (minimum 4 seconds between trade completions)
     if (this.lastTradeTime && Date.now() - this.lastTradeTime < 4000) {
       return;
     }
 
-    // Rolling tick slices
     const lastTicks = this.tickHistory.slice(-8);
     const quotes = lastTicks.map((t) => t.quote);
 
-    // Delta calculations
     const latest = quotes[quotes.length - 1];
     const prev1 = quotes[quotes.length - 2];
     const prev2 = quotes[quotes.length - 3];
-    const prev4 = quotes[quotes.length - 5];
-
-    const shortDelta = latest - prev2;
-    const mediumDelta = latest - prev4;
-
-    // Compute variance / micro-volatility
-    const mean = quotes.reduce((a, b) => a + b, 0) / quotes.length;
-    const variance = quotes.reduce((acc, q) => acc + Math.pow(q - mean, 2), 0) / quotes.length;
-    const stdDev = Math.sqrt(variance);
-
-    // Check for market stagnation or erratic spread
-    if (stdDev === 0) {
-      // Unsuitable market condition: zero volatility
-      return;
-    }
 
     let tradeDirection: 'CALL' | 'PUT' | null = null;
 
-    // Bullish momentum: 3 consecutive rising ticks with positive medium-term momentum
-    if (latest > prev1 && prev1 > prev2 && mediumDelta > 0) {
+    if (latest > prev1 && prev1 > prev2) {
       tradeDirection = 'CALL';
-    }
-    // Bearish momentum: 3 consecutive falling ticks with negative medium-term momentum
-    else if (latest < prev1 && prev1 < prev2 && mediumDelta < 0) {
+    } else if (latest < prev1 && prev1 < prev2) {
       tradeDirection = 'PUT';
     }
 
-    // Respect user setting if restricted to CALL or PUT only
-    if (tradeDirection) {
-      if (contractType === 'CALL' && tradeDirection !== 'CALL') {
-        tradeDirection = null;
-      } else if (contractType === 'PUT' && tradeDirection !== 'PUT') {
-        tradeDirection = null;
-      }
+    // Consult Gemini AI model for trade decision weighting
+    const aiDecision = await getGeminiAIRecommendation(quotes);
+    if (aiDecision) {
+      tradeDirection = aiDecision;
+      this.addLog('info', `Gemini AI Model analysis decision: ${aiDecision}`);
     }
 
     if (tradeDirection) {
       this.inTradeLock = true;
       this.status = 'CALCULATING_PROPOSAL';
-      this.addLog('info', `High-probability ${tradeDirection} momentum signal detected on ${symbol}. Requesting 5-tick proposal...`);
+      this.addLog('info', `Executing 5-tick ${tradeDirection} contract. Stake: $${this.currentStake.toFixed(2)} (Martingale step: ${this.consecutiveLosses})...`);
 
       const currency = user.derivConnection?.connectedCurrency || 'USD';
 
-      // Request proposal for 5 ticks
       this.ws?.send(
         JSON.stringify({
           proposal: 1,
-          amount: stake,
+          amount: this.currentStake,
           basis: 'stake',
           contract_type: tradeDirection,
           currency,
@@ -443,7 +436,22 @@ class UserTradingSession {
       const hitStopLoss = newProfitLoss <= -user.botSettings.maxDailyLoss;
       const hitTakeProfit = newProfitLoss >= user.botSettings.dailyProfitTarget;
 
-      // Update user stats
+      if (isWin) {
+        this.consecutiveLosses = 0;
+        this.currentStake = user.botSettings.stake;
+        this.addLog('trade', `Contract WON! Resetting stake to base $${this.currentStake.toFixed(2)}.`);
+      } else {
+        this.consecutiveLosses++;
+        const maxRun = user.botSettings.maxRun || 5;
+        if (this.consecutiveLosses >= maxRun) {
+          this.addLog('risk', `Max run limit reached (${maxRun} consecutive losses). Stopping engine.`);
+          this.stop('Max consecutive losses reached (Max Run)');
+          return;
+        }
+        this.currentStake = Number((this.currentStake * 2).toFixed(2));
+        this.addLog('trade', `Contract LOST. Martingale active: doubling stake to $${this.currentStake.toFixed(2)} (Loss run: ${this.consecutiveLosses}/${maxRun}).`);
+      }
+
       updateUser(this.userId, {
         dailyStats: {
           ...user.dailyStats,
@@ -456,7 +464,6 @@ class UserTradingSession {
         },
       });
 
-      // Save trade to persistent records
       const tradeRecord: TradeRecord = {
         id: `TRD-${Date.now()}-${contract.contract_id}`,
         userId: this.userId,
@@ -472,11 +479,10 @@ class UserTradingSession {
         entryTick: contract.entry_spot,
         exitTick: contract.exit_spot,
         timestamp: new Date().toISOString(),
-        reason: '5-tick momentum quantitative rule execution',
+        reason: 'Gemini AI + 5-tick momentum execution with Martingale',
       };
       addTrade(tradeRecord);
 
-      // Check risk limit triggers
       if (hitStopLoss) {
         this.addLog('risk', `Max daily loss limit of $${user.botSettings.maxDailyLoss.toFixed(2)} reached. Halting.`);
         this.stop('Daily loss limit reached');
@@ -489,7 +495,6 @@ class UserTradingSession {
       }
     }
 
-    // Cooldown state
     this.status = 'COOLDOWN';
     this.activeContract = null;
     this.lastTradeTime = Date.now();
@@ -516,7 +521,6 @@ class UserTradingSession {
 
     if (this.ws) {
       try {
-        // Forget ticks
         this.ws.send(JSON.stringify({ forget_all: 'ticks' }));
         this.ws.close();
       } catch {}
@@ -537,7 +541,6 @@ class UserTradingSession {
   }
 }
 
-// Global active sessions registry
 const activeSessions = new Map<string, UserTradingSession>();
 
 export function getOrCreateSession(userId: string): UserTradingSession {

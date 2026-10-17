@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -8,6 +10,7 @@ import { MobileNav } from '@/components/MobileNav';
 import { TradingChart } from '@/components/TradingChart';
 import { SanitizedUser } from '@/lib/auth';
 import { GSquadRobotIcon } from '@/components/GSquadLogo';
+import { DerivLogoIcon } from '@/components/DerivLogo';
 import { TradeRecord } from '@/lib/db';
 import { BotTelemetryLog, EngineState } from '@/lib/trading/engine';
 import {
@@ -48,8 +51,7 @@ export default function DashboardPage() {
   const [stake, setStake] = useState<number>(5.0);
   const [maxDailyLoss, setMaxDailyLoss] = useState<number>(50.0);
   const [dailyProfitTarget, setDailyProfitTarget] = useState<number>(100.0);
-  const [symbol, setSymbol] = useState<string>('R_100');
-  const [contractType, setContractType] = useState<'CALL' | 'PUT' | 'BOTH'>('BOTH');
+  const [maxRun, setMaxRun] = useState<number>(5);
   const [savingConfig, setSavingConfig] = useState(false);
   const [configNotice, setConfigNotice] = useState<string | null>(null);
 
@@ -58,6 +60,33 @@ export default function DashboardPage() {
   const [actionError, setActionError] = useState<string | null>(null);
 
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [oauthConnecting, setOauthConnecting] = useState(false);
+
+  const handleConnectOAuth = async () => {
+    try {
+      setOauthConnecting(true);
+      const res = await fetch('/api/auth/deriv/init?mode=login');
+      const data = await res.json();
+      if (data.url) {
+        const width = 600;
+        const height = 740;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2.5;
+        const popup = window.open(
+          data.url,
+          'deriv_oauth_dash',
+          `width=${width},height=${height},left=${left},top=${top}`
+        );
+        if (!popup || popup.closed) {
+          window.location.href = data.url;
+        }
+      }
+    } catch (e) {
+      console.warn('OAuth error:', e);
+    } finally {
+      setOauthConnecting(false);
+    }
+  };
 
 
   const fetchTrades = useCallback(async () => {
@@ -129,7 +158,8 @@ export default function DashboardPage() {
       try {
         const res = await fetch('/api/auth/me');
         if (!res.ok) {
-          router.push('/auth/login');
+          setUser(null);
+          setLoading(false);
           return;
         }
         const data = await res.json();
@@ -142,12 +172,13 @@ export default function DashboardPage() {
           setStake(data.user.botSettings.stake);
           setMaxDailyLoss(data.user.botSettings.maxDailyLoss);
           setDailyProfitTarget(data.user.botSettings.dailyProfitTarget);
-          setSymbol(data.user.botSettings.symbol || 'R_100');
-          setContractType(data.user.botSettings.contractType || 'BOTH');
+          setMaxRun(data.user.botSettings.maxRun || 5);
           fetchTrades();
         }
       } catch {
-        if (!ignore) router.push('/auth/login');
+        if (!ignore) {
+          setUser(null);
+        }
       } finally {
         if (!ignore) setLoading(false);
       }
@@ -186,8 +217,7 @@ export default function DashboardPage() {
           stake,
           maxDailyLoss,
           dailyProfitTarget,
-          symbol,
-          contractType,
+          maxRun,
         }),
       });
 
@@ -256,6 +286,37 @@ export default function DashboardPage() {
           <Activity className="w-8 h-8 animate-pulse text-blue-600 mx-auto" />
           <div className="text-sm font-semibold text-slate-700">Loading G-Squad Terminal...</div>
         </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col pb-16 md:pb-0">
+        <Navbar user={null} />
+        <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-16 flex flex-col items-center justify-center text-center space-y-6">
+          <div className="p-4 bg-red-50 border border-red-100 rounded-3xl shadow-sm">
+            <GSquadRobotIcon className="w-20 h-20 text-red-600 animate-pulse" />
+          </div>
+          <div className="space-y-2 max-w-lg">
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+              G-Squad Autonomous Deriv Terminal
+            </h1>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Connect your Deriv account securely via OAuth 2.0 PKCE to launch institutional-grade synthetic indices 5-tick automated trading with server-side risk limits.
+            </p>
+          </div>
+          <div className="pt-2">
+            <button
+              onClick={handleConnectOAuth}
+              disabled={oauthConnecting}
+              className="inline-flex items-center gap-2.5 px-6 py-3.5 text-base font-bold text-white bg-red-600 hover:bg-red-700 rounded-2xl shadow-md transition-all cursor-pointer disabled:opacity-50"
+            >
+              <DerivLogoIcon className="w-5 h-5" />
+              <span>{oauthConnecting ? 'Connecting to Deriv...' : 'Login with Deriv'}</span>
+            </button>
+          </div>
+        </main>
       </div>
     );
   }
@@ -547,57 +608,30 @@ export default function DashboardPage() {
               </div>
 
               <form onSubmit={handleSaveConfig} className="space-y-4">
-                {/* Symbol Selector */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Synthetic Index Market
-                  </label>
-                  <select
-                    value={symbol}
-                    onChange={(e) => setSymbol(e.target.value)}
-                    disabled={isBotActive}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-60"
-                  >
-                    <option value="R_100">Volatility 100 Index (Standard)</option>
-                    <option value="1HZ100V">Volatility 100 (1s) Index</option>
-                    <option value="R_75">Volatility 75 Index</option>
-                    <option value="R_50">Volatility 50 Index</option>
-                    <option value="R_25">Volatility 25 Index</option>
-                    <option value="R_10">Volatility 10 Index</option>
-                  </select>
-                </div>
-
-                {/* Contract Duration and Direction */}
+                {/* Fixed Strategy Info */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Duration
+                      Market Asset
                     </label>
-                    <div className="px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 text-center">
-                      5 Ticks (Fixed)
+                    <div className="px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 text-center">
+                      Volatility 100
                     </div>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Signal Filter
+                      Duration / Engine
                     </label>
-                    <select
-                      value={contractType}
-                      onChange={(e) => setContractType(e.target.value as 'CALL' | 'PUT' | 'BOTH')}
-                      disabled={isBotActive}
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-60"
-                    >
-                      <option value="BOTH">Rise & Fall (Adaptive)</option>
-                      <option value="CALL">Rise Only (CALL)</option>
-                      <option value="PUT">Fall Only (PUT)</option>
-                    </select>
+                    <div className="px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 text-center">
+                      5 Ticks + Gemini AI
+                    </div>
                   </div>
                 </div>
 
                 {/* Stake Amount */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Stake Amount ($ USD)
+                    Base Stake Amount ($ USD)
                   </label>
                   <input
                     type="number"
@@ -609,6 +643,7 @@ export default function DashboardPage() {
                     disabled={isBotActive}
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-mono font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-60"
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">Martingale doubles stake after each loss.</p>
                 </div>
 
                 {/* Max Daily Loss & Daily Profit Target */}
@@ -641,6 +676,24 @@ export default function DashboardPage() {
                       className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-mono font-semibold text-emerald-600 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-60"
                     />
                   </div>
+                </div>
+
+                {/* Max Run */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Max Run (Max Consecutive Losses)
+                  </label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="1"
+                    max="20"
+                    value={maxRun}
+                    onChange={(e) => setMaxRun(parseInt(e.target.value) || 5)}
+                    disabled={isBotActive}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-mono font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-60"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Stops bot if consecutive losses reach this limit.</p>
                 </div>
 
                 <button

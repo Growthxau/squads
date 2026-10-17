@@ -33,6 +33,7 @@ export interface BotSettings {
   stake: number;
   maxDailyLoss: number;
   dailyProfitTarget: number;
+  maxRun: number;
   isRunning: boolean;
 }
 

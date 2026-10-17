@@ -32,12 +32,13 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { stake, maxDailyLoss, dailyProfitTarget, symbol, contractType } = body;
+    const { stake, maxDailyLoss, dailyProfitTarget, maxRun } = body;
 
     // Validations
     const numStake = Number(stake);
     const numMaxLoss = Number(maxDailyLoss);
     const numProfitTarget = Number(dailyProfitTarget);
+    const numMaxRun = Number(maxRun) || 5;
 
     if (isNaN(numStake) || numStake < 0.35) {
       return NextResponse.json({ error: 'Stake amount must be at least $0.35.' }, { status: 400 });
@@ -51,19 +52,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Daily profit target must be at least $1.00.' }, { status: 400 });
     }
 
-    const validSymbols = ['R_100', 'R_75', 'R_50', 'R_25', 'R_10', '1HZ100V', '1HZ10V'];
-    const chosenSymbol = validSymbols.includes(symbol) ? symbol : 'R_100';
-
-    const validContractTypes = ['CALL', 'PUT', 'BOTH'];
-    const chosenType = validContractTypes.includes(contractType) ? contractType : 'BOTH';
+    if (isNaN(numMaxRun) || numMaxRun < 1 || numMaxRun > 20) {
+      return NextResponse.json({ error: 'Max run must be between 1 and 20.' }, { status: 400 });
+    }
 
     const newBotSettings = {
       ...user.botSettings,
       stake: numStake,
       maxDailyLoss: numMaxLoss,
       dailyProfitTarget: numProfitTarget,
-      symbol: chosenSymbol,
-      contractType: chosenType as 'CALL' | 'PUT' | 'BOTH',
+      maxRun: numMaxRun,
+      symbol: 'R_100',
+      contractType: 'BOTH' as const,
       durationTicks: 5, // strictly 5 ticks
     };
 

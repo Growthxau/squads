@@ -187,6 +187,7 @@ export async function handleDerivOAuthCallback(req: NextRequest) {
         stake: 5.0,
         maxDailyLoss: 50.0,
         dailyProfitTarget: 100.0,
+        maxRun: 5,
         isRunning: false,
       },
       dailyStats: {
